@@ -8,10 +8,12 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, ReentrancyGuard {
     
     using Counters for Counters.Counter;
+    using SafeERC20 for IERC20;
 
     Counters.Counter private _tokenIdCounter;
 
@@ -43,7 +45,7 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     event Earned(address assetOwner, uint256 amount);
 
     // Contract constructor
-    constructor(string memory _name, string memory _symbol, string memory _baseURI, uint96 _defaultRoyaltyFee) ERC721(_name,_symbol) Ownable(msg.sender){
+    constructor(string memory _name, string memory _symbol, string memory _baseURI, uint96 _defaultRoyaltyFee) ERC721(_name, _symbol) Ownable(msg.sender) {
         assetOwner = msg.sender;
         baseURI = _baseURI;
         _setDefaultRoyalty(assetOwner, _defaultRoyaltyFee);
@@ -63,7 +65,7 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
             IERC20 token = IERC20(paymentToken);
             require(token.allowance(msg.sender, address(this)) >= platformFee, "Insufficient token allowance");
             require(token.balanceOf(msg.sender) >= platformFee, "Insufficient token balance");
-            token.transferFrom(msg.sender, platformAddress, platformFee);
+            token.safeTransferFrom(msg.sender, platformAddress, platformFee);
         }
 
         uint256 tokenId = _tokenIdCounter.current();
@@ -80,9 +82,9 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
         return tokenId;
     }
 
-
     // Function to set the price and payment token
-    function setPriceAndPaymentToken(uint256 tokenId, uint256 _price, address _paymentToken) public {
+    function setPriceAndPaymentToken(uint256 tokenId, uint256 _price, address _paymentToken) 
+        public nonReentrant {
         require(tokenData[tokenId].currentOwner == msg.sender, "Not the Owner of the TokenID");
         tokenData[tokenId].price = _price;
         tokenData[tokenId].paymentToken = _paymentToken;
@@ -92,7 +94,8 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Setting base URI for all token types
-    function setBaseURI(string memory newBaseURI) public onlyOwner {
+    function setBaseURI(string memory newBaseURI) 
+        public onlyOwner nonReentrant {
         require(bytes(newBaseURI).length > 0, "Base URI cannot be empty");
         baseURI = newBaseURI;
 
@@ -100,7 +103,8 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Update the default royalty fee for all tokens
-    function setDefaultRoyaltyFee(uint96 newDefaultRoyaltyPercentage) public onlyOwner {
+    function setDefaultRoyaltyFee(uint96 newDefaultRoyaltyPercentage) 
+        public onlyOwner nonReentrant {
         require(newDefaultRoyaltyPercentage <= 10000, "Royalty percentage must be between 0 and 100%");
         _setDefaultRoyalty(assetOwner, newDefaultRoyaltyPercentage);
 
@@ -108,7 +112,8 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Set royalty information for a specific token
-    function setTokenRoyalty(uint256 tokenId, uint96 royaltyFee) public {
+    function setTokenRoyalty(uint256 tokenId, uint96 royaltyFee) 
+        public nonReentrant {
         require(tokenData[tokenId].currentOwner == msg.sender, "Not the Owner of the TokenID");
         require(royaltyFee <= 10000, "Royalty fee must be between 0% and 100%");
         _setTokenRoyalty(tokenId, msg.sender, royaltyFee);
@@ -117,11 +122,11 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Functionality to pause and unpause the contract
-    function pause() public onlyOwner {
+    function pause() public onlyOwner nonReentrant {
         _pause();
     }
 
-    function unpause() public onlyOwner {
+    function unpause() public onlyOwner nonReentrant {
         _unpause();
     }
 
@@ -134,8 +139,8 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Override supportsInterface to automatically check for ERC1155, ERC2981 support
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721URIStorage, ERC2981) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) 
+        public view override(ERC721URIStorage, ERC2981) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
-
 }
