@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -53,12 +53,12 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
 
     // Function to mint a new tokenId by owner
     function mintDigitalNft(uint256 price, string memory tokenURI, uint96 tokenRoyaltyFee, address paymentToken) 
-        public payable onlyOwner nonReentrant returns (uint256) {
+        external payable onlyOwner nonReentrant returns (uint256) {
         require(bytes(tokenURI).length > 0, "Token URI cannot be empty");
 
         uint256 platformFee = (price * platformMintFee) / 10000; // Calculate the platform fee
 
-        if (paymentToken == 0x0000000000000000000000000000000000000000) {
+        if (paymentToken == address(0)) {
             require(msg.value >= platformFee, "Insufficient payment in BTC");
             payable(platformAddress).transfer(platformFee);
         } else {
@@ -83,19 +83,19 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Function to set the price and payment token
-    function setPriceAndPaymentToken(uint256 tokenId, uint256 _price, address _paymentToken) 
-        public nonReentrant {
+    function setPriceAndPaymentToken(uint256 tokenId, uint256 price, address paymentToken) 
+        external nonReentrant {
         require(tokenData[tokenId].currentOwner == msg.sender, "Not the Owner of the TokenID");
-        tokenData[tokenId].price = _price;
-        tokenData[tokenId].paymentToken = _paymentToken;
+        tokenData[tokenId].price = price;
+        tokenData[tokenId].paymentToken = paymentToken;
 
-        emit PriceSet(tokenId, _price);
-        emit PaymentTokenSet(tokenId, _paymentToken);
+        emit PriceSet(tokenId, price);
+        emit PaymentTokenSet(tokenId, paymentToken);
     }
 
     // Setting base URI for all token types
     function setBaseURI(string memory newBaseURI) 
-        public onlyOwner nonReentrant {
+        external onlyOwner nonReentrant {
         require(bytes(newBaseURI).length > 0, "Base URI cannot be empty");
         baseURI = newBaseURI;
 
@@ -104,7 +104,7 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
 
     // Update the default royalty fee for all tokens
     function setDefaultRoyaltyFee(uint96 newDefaultRoyaltyPercentage) 
-        public onlyOwner nonReentrant {
+        external onlyOwner nonReentrant {
         require(newDefaultRoyaltyPercentage <= 10000, "Royalty percentage must be between 0 and 100%");
         _setDefaultRoyalty(assetOwner, newDefaultRoyaltyPercentage);
 
@@ -113,7 +113,7 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
 
     // Set royalty information for a specific token
     function setTokenRoyalty(uint256 tokenId, uint96 royaltyFee) 
-        public nonReentrant {
+        external nonReentrant {
         require(tokenData[tokenId].currentOwner == msg.sender, "Not the Owner of the TokenID");
         require(royaltyFee <= 10000, "Royalty fee must be between 0% and 100%");
         _setTokenRoyalty(tokenId, msg.sender, royaltyFee);
@@ -122,17 +122,19 @@ contract MyNFTCollection721 is ERC721URIStorage, ERC2981, Pausable, Ownable, Ree
     }
 
     // Functionality to pause and unpause the contract
-    function pause() public onlyOwner nonReentrant {
+    function pause() external onlyOwner nonReentrant {
         _pause();
     }
 
-    function unpause() public onlyOwner nonReentrant {
+    function unpause() external onlyOwner nonReentrant {
         _unpause();
     }
 
     // Enable the owner to withdraw the contract's balance
-    function withdraw() public onlyOwner nonReentrant {
+    function withdraw() external onlyOwner nonReentrant {
         uint256 balance = address(this).balance;
+
+        // Apply check-effects-interactions pattern
         payable(msg.sender).transfer(balance);
 
         emit Earned(msg.sender, balance);
