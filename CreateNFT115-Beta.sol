@@ -164,7 +164,7 @@ contract MyNFTCollection1155 is Initializable, ERC1155URIStorageUpgradeable, ERC
     }
 
     // Update the default royalty fee for all tokens
-    function setDefaultRoyaltyFee(uint96 newDefaultRoyaltyPercentage) public onlyOwner {
+    function setDefaultRoyaltyFee(uint96 newDefaultRoyaltyPercentage) public onlyOwner nonReentrant {
         require(newDefaultRoyaltyPercentage <= 10000, "Royalty percentage must be between 0 and 100%");
         _setDefaultRoyalty(assetOwner, newDefaultRoyaltyPercentage);
 
