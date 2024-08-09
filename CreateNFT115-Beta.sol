@@ -49,7 +49,7 @@ contract MyNFTCollection1155 is Initializable, ERC1155URIStorageUpgradeable, ERC
     event Earned(address assetOwner, uint256 amount);
 
     // Initializer function to replace constructor
-    function initialize(string memory _name, string memory _symbol, string memory _URI, uint96 _defaultRoyaltyFee) public initializer {
+    function initialize(string memory _name, string memory _symbol, string memory _URI, uint96 _defaultRoyaltyFee) public initializer nonReentrant {
         __ERC1155URIStorage_init();
         __Ownable_init(msg.sender);
         __ReentrancyGuard_init();
