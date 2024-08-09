@@ -132,17 +132,18 @@ contract MyNFTCollection1155 is Initializable, ERC1155URIStorageUpgradeable, ERC
             require(paymentToken.allowance(msg.sender, address(this)) >= totalPrice, "Insufficient token allowance");
             require(paymentToken.balanceOf(msg.sender) >= totalPrice, "Insufficient token balance");
 
-            paymentToken.transferFrom(msg.sender, platformAddress, platformFee);
+            require(paymentToken.transferFrom(msg.sender, platformAddress, platformFee), "Transfer to platform failed");
             if (msg.sender != owner()) {
-                paymentToken.transferFrom(msg.sender, assetOwner, baseTotalPrice);
+                require(paymentToken.transferFrom(msg.sender, assetOwner, baseTotalPrice), "Transfer to asset owner failed");
             }
         }
 
         _mint(msg.sender, tokenId, mintAmount, "");
         tokenData[tokenId].mintedSupply += mintAmount;
-        
+
         emit NFTMinted(tokenId, mintAmount, msg.sender);
     }
+
 
     // Function to set the price and payment token
     function setPriceAndPaymentToken(uint256 tokenId, uint256 _price, address _paymentToken) public onlyOwner {
