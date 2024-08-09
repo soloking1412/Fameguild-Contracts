@@ -9,10 +9,10 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 contract MyNFTCollection1155 is Initializable, ERC1155URIStorageUpgradeable, ERC2981Upgradeable, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
-
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     CountersUpgradeable.Counter private _tokenIdCounter;
 
     // Fixed variable
@@ -90,10 +90,10 @@ contract MyNFTCollection1155 is Initializable, ERC1155URIStorageUpgradeable, ERC
             require(msg.value >= platformFee, "Insufficient payment in ETH");
             payable(platformAddress).transfer(platformFee);
         } else {
-            IERC20 token = IERC20(paymentToken);
+            IERC20Upgradeable token = IERC20Upgradeable(paymentToken);
             require(token.allowance(msg.sender, address(this)) >= platformFee, "Insufficient token allowance");
             require(token.balanceOf(msg.sender) >= platformFee, "Insufficient token balance");
-            token.transferFrom(msg.sender, platformAddress, platformFee);
+            token.safeTransferFrom(msg.sender, platformAddress, platformFee);
         }
 
         uint256 tokenId = _tokenIdCounter.current();
